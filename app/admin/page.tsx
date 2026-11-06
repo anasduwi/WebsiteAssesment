@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+import { AdminLoginForm } from "@/components/admin/admin-login-form";
+import { isAdminEmail } from "@/lib/admin";
+import { signOutAdmin } from "./actions";
 
 const overviewMetrics = [
   { label: "Total Participants", value: "126" },
@@ -18,24 +23,85 @@ const participants = [
   { name: "Eko Purnomo", asmo: "ASMO 02", date: "2026-11-05", score: 80, status: "PASSED", certificate: "Yes" },
 ];
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const supabase = await createServerSupabaseClient();
+
+  if (!supabase) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <Card className="border-amber-200 bg-amber-50 shadow-sm">
+          <CardContent className="p-6">
+            <p className="font-medium text-amber-900">Konfigurasi Supabase belum lengkap.</p>
+            <p className="mt-2 text-sm text-amber-800">
+              Isi variabel NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, dan ADMIN_ALLOWED_EMAILS di file .env.local sebelum login admin.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthorized = Boolean(user && isAdminEmail(user.email));
+
+  if (!user || !isAuthorized) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mb-8 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <Card className="border-slate-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle>Administrator Access</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <AdminLoginForm />
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle>System Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {overviewMetrics.map((metric) => (
+                  <div key={metric.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{metric.label}</div>
+                    <div className="mt-3 text-3xl font-bold text-slate-950">{metric.value}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm uppercase tracking-[0.2em] text-slate-500">Administrator Dashboard</div>
+          <h1 className="mt-2 text-3xl font-bold text-slate-950">Welcome, {user.email}</h1>
+        </div>
+        <form action={signOutAdmin}>
+          <Button type="submit" variant="outline" className="rounded-full border-slate-200 bg-white text-slate-900">
+            Logout
+          </Button>
+        </form>
+      </div>
+
       <div className="mb-8 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <Card className="border-slate-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle>Administrator Access</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-6 pt-0">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
-              <Input placeholder="admin@dms.local" />
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+              Login berhasil. Akun admin terverifikasi.
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Password</label>
-              <Input type="password" placeholder="••••••••" />
-            </div>
-            <Button className="w-full rounded-full bg-slate-900 text-white hover:bg-slate-700">Login</Button>
           </CardContent>
         </Card>
 

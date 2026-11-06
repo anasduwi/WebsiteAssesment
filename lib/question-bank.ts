@@ -226,7 +226,7 @@ export const QUESTION_BANK: ExamQuestion[] = [
     question_number: 15,
     topic: "Struktur Menu DMS – Trade Promo Detail",
     question_text:
-      "Saat mencari Report Trade Promo Detail pada daftar CPS Supervisor Menu, kombinasi Menu yang tepat adalah?",
+      "Saat mencari Report Trade Promo Detail, kombinasi Menu yang tepat adalah?",
     option_a: "Marketing – Marketing Report.",
     option_b: "Sales – Sales Report.",
     option_c: "General – General Approval.",

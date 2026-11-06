@@ -93,18 +93,25 @@ export default function ExamPage() {
     window.localStorage.setItem("dms-exam-answers", JSON.stringify(nextAnswers));
   }
 
+  const allQuestionsAnswered = publicQuestionBank.every((question) => Boolean(answers[question.question_number]));
+
   const completeExam = useCallback(
     (timeout = false) => {
-      const summary = calculateScore(
-        Object.fromEntries(
-          Object.entries(answers).map(([key, value]) => [Number(key), value as "A" | "B" | "C" | "D"]),
-        ),
-      );
+      if (!allQuestionsAnswered && !timeout) {
+        window.alert("Silakan jawab semua soal sebelum submit ujian.");
+        return;
+      }
+
+      const selectedAnswers = Object.fromEntries(
+        Object.entries(answers).map(([key, value]) => [Number(key), value.toUpperCase() as "A" | "B" | "C" | "D"]),
+      ) as Record<number, "A" | "B" | "C" | "D">;
+
+      const summary = calculateScore(selectedAnswers);
 
       const query = new URLSearchParams({
         fullName: participant.fullName,
         asmo: participant.asmo,
-        score: summary.finalScore.toString(),
+        score: summary.finalScore.toFixed(2),
         passed: String(summary.passed),
         status: timeout ? "TIMEOUT" : "SUBMITTED",
       });
@@ -116,10 +123,21 @@ export default function ExamPage() {
         window.localStorage.setItem("dms-exam-attempts", JSON.stringify([...records, dailyKey]));
       }
 
+      window.localStorage.setItem(
+        "dms-last-result",
+        JSON.stringify({
+          fullName: participant.fullName,
+          asmo: participant.asmo,
+          score: summary.finalScore,
+          passed: summary.passed,
+          status: timeout ? "TIMEOUT" : "SUBMITTED",
+        }),
+      );
+
       setTimeRemaining(0);
       router.push(`/exam/result?${query.toString()}`);
     },
-    [answers, participant, router],
+    [allQuestionsAnswered, answers, participant, router],
   );
 
   useEffect(() => {
@@ -286,9 +304,16 @@ export default function ExamPage() {
               >
                 Next
               </Button>
-              <Button onClick={() => completeExam(false)} className="ml-auto rounded-full bg-amber-500 text-slate-900 hover:bg-amber-400">
-                Submit Exam
-              </Button>
+
+              {allQuestionsAnswered ? (
+                <Button onClick={() => completeExam(false)} className="ml-auto rounded-full bg-amber-500 text-slate-900 hover:bg-amber-400">
+                  Submit Exam
+                </Button>
+              ) : (
+                <div className="ml-auto rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800">
+                  Jawab semua soal sebelum submit
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
